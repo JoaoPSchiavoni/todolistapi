@@ -12,5 +12,13 @@ def test_root_deve_retornar_ola_mundo():
 
     response = client.get('/')
 
-    assert response.json() == {'message': 'Ola mundo!1234'}
+    assert response.json() == {'message': 'Ola mundo!'}
+    assert response.status_code == HTTPStatus.OK
+
+
+def test_olamundogtml_deve_retornar_200():
+    client = TestClient(app)
+
+    response = client.get('/ex')
+
     assert response.status_code == HTTPStatus.OK
