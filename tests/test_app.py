@@ -99,5 +99,7 @@ def test_put_user_404(client):
 
 
 def test_get_user_404(client):
-    response = client.get('/users/-1',)
+    response = client.get(
+        '/users/-1',
+    )
     assert response.status_code == HTTPStatus.NOT_FOUND
