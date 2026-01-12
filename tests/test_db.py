@@ -1,7 +1,9 @@
 from dataclasses import asdict
 
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
+from todolist_api.database import get_session
 from todolist_api.models import User
 
 
@@ -21,4 +23,14 @@ def test_create_user(session, mock_db_time):
         'email': 'alice@test',
         'password': 'secret',
         'created_at': time,
+        'updated_at': time,
     }
+
+
+def test_get_session():
+    gen = get_session()
+
+    session = next(gen)
+
+    assert isinstance(session, Session)
+    assert session.is_active

@@ -57,6 +57,7 @@ format = 'ruff format'
 run = 'fastapi dev todolist_api/app.py'
 pre_test = 'task lint'
 test = 'pytest -s -x -vv'
-post_test = 'coverage html --source=todolist_api'
+post_test = 'coverage html --source=tests'
 delete_old_cov = 'rm -rf .coverage htmlcov'
+harlequin = 'pipx run harlequin database.db'
 
