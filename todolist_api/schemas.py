@@ -25,3 +25,8 @@ class UserDB(UserPublic):
 
 class UserList(BaseModel):
     users: list[UserPublic]
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str

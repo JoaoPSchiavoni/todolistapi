@@ -62,9 +62,10 @@ def test_read_users_with_users(client, user):
 
 
 # PUT
-def test_update_user(client, user):
+def test_update_user(client, user, token):
     response_update = client.put(
-        '/users/1',
+        f'/users/{user.id}',
+        headers={'Authorization': f'Bearer {token}'},
         json={
             'username': 'bob',
             'email': 'bob@example.com',
@@ -75,14 +76,68 @@ def test_update_user(client, user):
     assert response_update.json() == {
         'username': 'bob',
         'email': 'bob@example.com',
-        'id': 1,
+        'id': user.id,
     }
 
 
+# DELETE
+def test_delete_user(client, user, token):
+    response = client.delete(
+        f'/users/{user.id}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {'message': 'User deleted'}
+
+
+# DELETE 404
+def test_delete_user_404(client, user, token):
+    response = client.delete(
+        '/users/999', headers={'Authorization': f'Bearer {token}'}
+    )
+
+    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.json() == {'detail': 'User enough permission'}
+
+
+# GET 404
+def test_get_user_by_id_404(client, user, token):
+    response = client.get(
+        '/users/999', headers={'Authorization': f'Bearer {token}'}
+    )
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'User not found'}
+
+
+# GET
+def test_get_user_by_id(client, user, token):
+    response = client.get(
+        f'/users/{user.id}', headers={'Authorization': f'Bearer {token}'}
+    )
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json()['username'] == user.username
+
+
+# AUTH
+def test_get_token(client, user):
+    response = client.post(
+        '/token',
+        data={'username': user.email, 'password': user.clean_password},
+    )
+    token = response.json()
+
+    assert response.status_code == HTTPStatus.OK
+    assert 'access_token' in token
+    assert 'token_type' in token
+
+
 # PUT 404
-def test_update_user_not_found(client):
+def test_update_user_404(client, user, token):
     response = client.put(
-        '/users/-1',
+        '/users/999',
+        headers={'Authorization': f'Bearer {token}'},
         json={
             'username': 'dog',
             'email': 'dog@example.com',
@@ -90,12 +145,12 @@ def test_update_user_not_found(client):
         },
     )
 
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'User not found'}
+    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.json() == {'detail': 'Not enough permissions'}
 
 
 # PUT
-def test_update_integrity_error(client, user):
+def test_update_integrity_error(client, user, token):
     client.post(
         '/users',
         json={
@@ -106,6 +161,7 @@ def test_update_integrity_error(client, user):
     )
     response_update = client.put(
         f'/users/{user.id}',
+        headers={'Authorization': f'Bearer {token}'},
         json={
             'username': 'fausto',
             'email': 'fausto@example.com',
@@ -117,35 +173,3 @@ def test_update_integrity_error(client, user):
     assert response_update.json() == {
         'detail': 'Username or Email already exists'
     }
-
-
-# DELETE
-def test_delete_user(client, user):
-    response = client.delete('/users/1')
-
-    assert response.status_code == HTTPStatus.OK
-    assert response.json() == {'message': 'User deleted'}
-
-
-# GET 404
-def test_delete_user_404(client):
-    response = client.delete('/users/-1')
-
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'User not found'}
-
-
-# GET 404
-def test_get_user_by_id_404(client):
-    response = client.get('/users/6666')
-
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'User not found'}
-
-
-# GET
-def test_get_user_by_id(client, user):
-    response = client.get(f'/users/{user.id}')
-
-    assert response.status_code == HTTPStatus.OK
-    assert response.json()['username'] == user.username
