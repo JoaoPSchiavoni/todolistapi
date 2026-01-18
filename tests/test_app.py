@@ -1,6 +1,7 @@
 from http import HTTPStatus
 
 from todolist_api.schemas import UserPublic
+from todolist_api.security import create_access_token
 
 
 def test_root_deve_retornar_ola_mundo(client):
@@ -173,3 +174,56 @@ def test_update_integrity_error(client, user, token):
     assert response_update.json() == {
         'detail': 'Username or Email already exists'
     }
+
+
+# GET 404
+def test_get_current_user_not_found(client):
+    data = {'no-email': 'test'}
+    token = create_access_token(data)
+
+    response = client.get(
+        '/users/1', headers={'Authorization': f'Bearer {token}'}
+    )
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'User not found'}
+
+
+# DELETE 401
+def test_get_current_user_does_not_exists__exercicio(client):
+    data = {'sub': 'test@test'}
+    token = create_access_token(data)
+
+    response = client.delete(
+        '/users/1',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json() == {'detail': 'Could not validate credentials'}
+
+
+# POST 401
+def test_login_for_access_token_user_not_found(client):
+    response = client.post(
+        '/token',
+        data={
+            'username': 'inexistente@email.com',
+            'password': 'qualquer_senha',
+        },
+    )
+
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json() == {'detail': 'Incorrect email or password'}
+
+
+# POST PASS401
+def test_login_for_access_token_wrong_password(client, user):
+    # 'user' é uma fixture que cria um usuário no banco (ex: senha '123456')
+
+    response = client.post(
+        '/token', data={'username': user.email, 'password': 'senha_errada'}
+    )
+
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json() == {'detail': 'Incorrect email or password'}
